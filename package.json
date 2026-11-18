@@ -1,11 +1,15 @@
+
 {
-  "name": "unrestricted-proxy",
+  "name": "node-proxy",
   "version": "1.0.0",
-  "description": "An unrestricted proxy server",
+  "description": "HTTP and HTTPS proxy server",
   "main": "index.js",
   "scripts": {
     "start": "node index.js"
   },
-  "author": "Your Name",
+  "engines": {
+    "node": "22.x"
+  },
+  "private": true,
   "license": "ISC"
 }
