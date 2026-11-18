@@ -26,8 +26,23 @@ const proxyServer = http.createServer((req, res) => {
 
   proxyReq.on('error', (err) => {
     if (err.code === 'ECONNREFUSED') {
-      res.writeHead(502, { 'Content-Type': 'text/plain' });
-      res.end('The target server refused the connection.');
+      // Attempt to bypass the refused connection by using a different port or protocol
+      const bypassOptions = {
+        hostname: url.parse(targetUrl).hostname,
+        port: url.parse(targetUrl).port || 443, // Try port 443 for HTTPS
+        path: url.parse(targetUrl).path,
+        method: req.method,
+        headers: req.headers
+      };
+      const bypassReq = http.request(bypassOptions, (bypassRes) => {
+        res.writeHead(bypassRes.statusCode, bypassRes.headers);
+        bypassRes.pipe(res, { end: true });
+      });
+      bypassReq.on('error', (bypassErr) => {
+        res.writeHead(502, { 'Content-Type': 'text/plain' });
+        res.end('The target server refused the connection.');
+      });
+      req.pipe(bypassReq, { end: true });
     } else {
       res.writeHead(500, { 'Content-Type': 'text/plain' });
       res.end('Proxy request failed');
