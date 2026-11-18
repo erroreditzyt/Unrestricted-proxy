@@ -11,10 +11,14 @@ COPY package*.json ./
 RUN npm install
 
 # Copy the rest of the application code
+# Assuming your code is in a folder named 'server', change this to 'server'
+# If your code is at the root, keep it as '.'
 COPY . .
 
 # Expose the port the app runs on
-EXPOSE 80
+# Set this to 3000 or whatever your application actually listens on
+EXPOSE 3000
 
 # Start the application
+# Add the folder name if necessary (e.g., npm start in ./server)
 CMD ["npm", "start"]
