@@ -1,15 +1,9 @@
-
 {
-  "name": "node-proxy",
+  "name": "render-web-preview",
   "version": "1.0.0",
-  "description": "HTTP and HTTPS proxy server",
-  "main": "index.js",
-  "scripts": {
-    "start": "node index.js"
-  },
-  "engines": {
-    "node": "22.x"
-  },
   "private": true,
+  "main": "index.js",
+  "scripts": { "start": "node index.js" },
+  "engines": { "node": "22.x" },
   "license": "ISC"
 }
