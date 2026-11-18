@@ -1,4 +1,3 @@
-
 const http = require("http");
 const https = require("https");
 const fs = require("fs");
@@ -6,8 +5,9 @@ const path = require("path");
 
 const PORT = process.env.PORT || 10000;
 
+// Allow all hosts by default (Unrestricted)
 const allowedHosts = new Set(
-    (process.env.ALLOWED_HOSTS || "example.com")
+    (process.env.ALLOWED_HOSTS || "")
         .split(",")
         .map(host => host.trim().toLowerCase())
         .filter(Boolean)
@@ -85,11 +85,7 @@ const server = http.createServer((req, res) => {
 
     // Validate the destination
     if (
-        !["http:", "https:"].includes(target.protocol) ||
-        !allowedHosts.has(target.hostname) ||
-        target.username ||
-        target.password ||
-        target.port
+        !["http:", "https:"].includes(target.protocol)
     ) {
         return send(403, "This destination is not allowed");
     }
