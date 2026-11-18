@@ -28,6 +28,7 @@ const proxyServer = http.createServer((req, res) => {
   });
 
   proxyReq.on('error', (err) => {
+    console.error('Proxy request error:', err);
     if (err.code === 'ECONNREFUSED') {
       // Attempt to bypass the refused connection by using a different port or protocol
       const bypassOptions = {
@@ -45,6 +46,7 @@ const proxyServer = http.createServer((req, res) => {
         bypassRes.pipe(res, { end: true });
       });
       bypassReq.on('error', (bypassErr) => {
+        console.error('Bypass request error:', bypassErr);
         res.writeHead(502, { 'Content-Type': 'text/plain' });
         res.end('The target server refused the connection.');
       });
@@ -60,4 +62,8 @@ const proxyServer = http.createServer((req, res) => {
 
 proxyServer.listen(80, () => {
   console.log('Proxy server is running on port 80');
+});
+
+proxyServer.on('error', (err) => {
+  console.error('Proxy server error:', err);
 });
