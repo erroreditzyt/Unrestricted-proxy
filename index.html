@@ -9,7 +9,11 @@
 </style>
 </head>
 <body>
-<header><h1>Web Preview</h1><form id="form"><input id="url" aria-label="Website URL" placeholder="https://example.com" required><button>Go</button></form></header>
+<header><h1>Web Preview</restricted></h1>
+<form id="form">
+<input id="url" aria-label="Website URL" placeholder="https://example.com" required>
+<button>Go</button>
+</form>
 <div id="status" role="status">Ready. Try https://example.com.</div>
 <iframe id="frame" title="Website preview" sandbox referrerpolicy="no-referrer"></iframe>
 <script>
