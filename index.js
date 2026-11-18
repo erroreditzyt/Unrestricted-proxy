@@ -19,6 +19,9 @@ const proxyServer = http.createServer((req, res) => {
     headers: req.headers
   };
 
+  // Set a user-agent string that mimics a real browser
+  options.headers['User-Agent'] = 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/58.0.3029.110 Safari/537.3';
+
   const proxyReq = http.request(options, (proxyRes) => {
     res.writeHead(proxyRes.statusCode, proxyRes.headers);
     proxyRes.pipe(res, { end: true });
@@ -34,6 +37,9 @@ const proxyServer = http.createServer((req, res) => {
         method: req.method,
         headers: req.headers
       };
+      // Set a user-agent string that mimics a real browser
+      bypassOptions.headers['User-Agent'] = 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/58.0.3029.110 Safari/537.3';
+
       const bypassReq = http.request(bypassOptions, (bypassRes) => {
         res.writeHead(bypassRes.statusCode, bypassRes.headers);
         bypassRes.pipe(res, { end: true });
