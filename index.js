@@ -25,8 +25,13 @@ const proxyServer = http.createServer((req, res) => {
   });
 
   proxyReq.on('error', (err) => {
-    res.writeHead(500, { 'Content-Type': 'text/plain' });
-    res.end('Proxy request failed');
+    if (err.code === 'ECONNREFUSED') {
+      res.writeHead(502, { 'Content-Type': 'text/plain' });
+      res.end('The target server refused the connection.');
+    } else {
+      res.writeHead(500, { 'Content-Type': 'text/plain' });
+      res.end('Proxy request failed');
+    }
   });
 
   req.pipe(proxyReq, { end: true });
