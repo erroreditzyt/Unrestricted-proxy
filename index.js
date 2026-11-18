@@ -1,69 +1,109 @@
-const http = require('http');
-const url = require('url');
 
-const proxyServer = http.createServer((req, res) => {
-  const parsedUrl = url.parse(req.url, true);
-  const targetUrl = parsedUrl.query.url;
+const http = require("http");
+const https = require("https");
 
-  if (!targetUrl) {
-    res.writeHead(400, { 'Content-Type': 'text/plain' });
-    res.end('URL parameter is required');
-    return;
-  }
+const PORT = process.env.PORT || 3000;
 
-  const options = {
-    hostname: url.parse(targetUrl).hostname,
-    port: url.parse(targetUrl).port || 80,
-    path: url.parse(targetUrl).path,
-    method: req.method,
-    headers: req.headers
+const allowedHosts = new Set(
+  (process.env.ALLOWED_HOSTS || "example.com")
+    .split(",")
+    .map(host => host.trim().toLowerCase())
+);
+
+const server = http.createServer((req, res) => {
+  const send = (status, message) => {
+    res.writeHead(status, {
+      "Content-Type": "text/plain"
+    });
+    res.end(message);
   };
 
-  // Set a user-agent string that mimics a real browser
-  options.headers['User-Agent'] = 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/58.0.3029.110 Safari/537.3';
+  const parsedUrl = new URL(req.url, "http://localhost");
+  const targetUrl = parsedUrl.searchParams.get("url");
 
-  const proxyReq = http.request(options, (proxyRes) => {
-    res.writeHead(proxyRes.statusCode, proxyRes.headers);
-    proxyRes.pipe(res, { end: true });
+  if (!targetUrl) {
+    return send(200, "Proxy server is online!");
+  }
+
+  if (!["GET", "HEAD"].includes(req.method)) {
+    return send(405, "Method not allowed");
+  }
+
+  let target;
+
+  try {
+    target = new URL(targetUrl);
+  } catch {
+    return send(400, "Invalid URL");
+  }
+
+  if (
+    !["http:", "https:"].includes(target.protocol) ||
+    !allowedHosts.has(target.hostname) ||
+    target.username ||
+    target.password ||
+    target.port
+  ) {
+    return send(403, "Target is not allowed");
+  }
+
+  const transport =
+    target.protocol === "https:" ? https : http;
+
+  const proxyReq = transport.request(
+    target,
+    {
+      method: req.method,
+      headers: {
+        "User-Agent": "RenderNodeProxy/1.0",
+        "Accept": "*/*"
+      }
+    },
+    proxyRes => {
+      const headers = {
+        "Content-Type":
+          proxyRes.headers["content-type"] ||
+          "application/octet-stream"
+      };
+
+      if (proxyRes.headers["content-encoding"]) {
+        headers["Content-Encoding"] =
+          proxyRes.headers["content-encoding"];
+      }
+
+      if (
+        proxyRes.statusCode >= 300 &&
+        proxyRes.statusCode < 400 &&
+        proxyRes.headers.location
+      ) {
+        proxyRes.resume();
+        return send(502, "Upstream redirect not supported");
+      }
+
+      res.writeHead(proxyRes.statusCode, headers);
+      proxyRes.pipe(res);
+    }
+  );
+
+  proxyReq.setTimeout(15000, () => {
+    proxyReq.destroy(new Error("Request timed out"));
   });
 
-  proxyReq.on('error', (err) => {
-    console.error('Proxy request error:', err);
-    if (err.code === 'ECONNREFUSED') {
-      // Attempt to bypass the refused connection by using a different port or protocol
-      const bypassOptions = {
-        hostname: url.parse(targetUrl).hostname,
-        port: url.parse(targetUrl).port || 443, // Try port 443 for HTTPS
-        path: url.parse(targetUrl).path,
-        method: req.method,
-        headers: req.headers
-      };
-      // Set a user-agent string that mimics a real browser
-      bypassOptions.headers['User-Agent'] = 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/58.0.3029.110 Safari/537.3';
+  proxyReq.on("error", err => {
+    console.error("Proxy error:", err.message);
 
-      const bypassReq = http.request(bypassOptions, (bypassRes) => {
-        res.writeHead(bypassRes.statusCode, bypassRes.headers);
-        bypassRes.pipe(res, { end: true });
-      });
-      bypassReq.on('error', (bypassErr) => {
-        console.error('Bypass request error:', bypassErr);
-        res.writeHead(502, { 'Content-Type': 'text/plain' });
-        res.end('The target server refused the connection.');
-      });
-      req.pipe(bypassReq, { end: true });
+    if (!res.headersSent) {
+      send(502, "Unable to connect to target");
     } else {
-      res.writeHead(500, { 'Content-Type': 'text/plain' });
-      res.end('Proxy request failed');
+      res.destroy();
     }
   });
 
-  req.pipe(proxyReq, { end: true });
+  res.on("close", () => proxyReq.destroy());
+
+  proxyReq.end();
 });
 
-proxyServer.listen(80, () => {
-  console.log('Proxy server is running on port 80');
-});
-
-proxyServer.on('error', (err) => {
-  console.error('Proxy server error:', err);
+server.listen(PORT, "0.0.0.0", () => {
+  console.log(`Proxy server running on port ${PORT}`);
 });
