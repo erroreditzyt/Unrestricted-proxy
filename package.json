@@ -6,6 +6,6 @@
   "scripts": {
     "start": "node index.js"
   },
-  "author": "Error",
+  "author": "Your Name",
   "license": "ISC"
 }
