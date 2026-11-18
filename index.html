@@ -1,0 +1,34 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Web Preview</title>
+<style>
+*{box-sizing:border-box}body{margin:0;background:#101114;color:#fff;font:15px Arial,sans-serif;min-height:100vh;height:100dvh;display:flex;flex-direction:column}header{background:#191b20;padding:20px;border-bottom:1px solid #30323a}h1{font-size:23px;margin:0 0 15px}form{display:flex;gap:10px}input,button{border-radius:8px;font:inherit;padding:12px 15px}input{flex:1;min-width:0;background:#292c34;color:#fff;border:1px solid #40434d}button{background:#4263eb;color:white;border:0;cursor:pointer}#status{padding:10px 20px;color:#a5adbd}iframe{flex:1;min-height:0;width:100%;border:0;background:white}
+</style>
+</head>
+<body>
+<header><h1>Web Preview</h1><form id="form"><input id="url" aria-label="Website URL" placeholder="https://example.com" required><button>Go</button></form></header>
+<div id="status" role="status">Ready. Try https://example.com.</div>
+<iframe id="frame" title="Website preview" sandbox referrerpolicy="no-referrer"></iframe>
+<script>
+const form=document.getElementById('form');
+const input=document.getElementById('url');
+const frame=document.getElementById('frame');
+const status=document.getElementById('status');
+form.addEventListener('submit',event=>{
+  event.preventDefault();
+  let value=input.value.trim();
+  if(!/^[a-z][a-z0-9+.-]*:/i.test(value)) value='https://'+value;
+  try {
+    const target=new URL(value);
+    if(!['http:','https:'].includes(target.protocol)) throw new Error();
+    status.textContent='Requesting '+target.hostname+'…';
+    frame.src='/proxy?url='+encodeURIComponent(target.href);
+  } catch {status.textContent='Enter a valid HTTP or HTTPS URL.';}
+});
+frame.addEventListener('load',()=>{if(frame.hasAttribute('src')) status.textContent='Response received. Check the preview for any errors.';});
+</script>
+</body>
+</html>
